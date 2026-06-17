@@ -1,9 +1,8 @@
 import type { APIRoute } from 'astro';
-import { getSql } from '../../lib/db';
+import { db, npsResponses } from '../../lib/db';
 
 export const prerender = false;
 
-/** Opciones válidas por pregunta de opción única (deben coincidir con la UI). */
 const OPCIONES: Record<string, readonly string[]> = {
   satisfaccion_producto: [
     'Muy insatisfecho',
@@ -60,15 +59,15 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   try {
-    const sql = getSql();
-    await sql`
-      insert into nps_responses
-        (nombre, satisfaccion_producto, cumplio_expectativas,
-         cumplimiento_plazos, comunicacion, recomendacion, comentarios)
-      values
-        (${nombre}, ${valores.satisfaccion_producto}, ${valores.cumplio_expectativas},
-         ${valores.cumplimiento_plazos}, ${valores.comunicacion}, ${recomendacion}, ${comentarios})
-    `;
+    await db.insert(npsResponses).values({
+      nombre,
+      satisfaccion_producto: valores.satisfaccion_producto,
+      cumplio_expectativas: valores.cumplio_expectativas,
+      cumplimiento_plazos: valores.cumplimiento_plazos,
+      comunicacion: valores.comunicacion,
+      recomendacion,
+      comentarios,
+    });
   } catch (e) {
     console.error('Error guardando respuesta NPS:', e);
     return json({ ok: false, error: 'Error del servidor' }, 500);
