@@ -1,0 +1,57 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="¡Gracias!">
+  <main class="gracias">
+    <div class="gracias__card">
+      <svg class="gracias__icon" viewBox="0 0 24 24" width="56" height="56" aria-hidden="true">
+        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.5" />
+        <path
+          d="M7.5 12.5l3 3 6-6.5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+      <h1>¡Gracias por tu tiempo!</h1>
+      <p>Recibimos tus respuestas. Tu opinión nos ayuda a mejorar.</p>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .gracias {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  .gracias__card {
+    max-width: 26rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .gracias__icon {
+    color: var(--border-strong);
+  }
+
+  .gracias__card h1 {
+    font-size: 1.625rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .gracias__card p {
+    color: var(--muted);
+    font-size: 1rem;
+  }
+</style>

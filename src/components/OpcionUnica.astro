@@ -1,0 +1,92 @@
+---
+interface Props {
+  name: string;
+  options: string[];
+}
+
+const { name, options } = Astro.props;
+---
+
+<div class="opciones" role="radiogroup">
+  {
+    options.map((opt) => (
+      <label class="opcion">
+        <input type="radio" name={name} value={opt} required />
+        <span class="opcion__dot" aria-hidden="true" />
+        <span class="opcion__text">{opt}</span>
+      </label>
+    ))
+  }
+</div>
+
+<style>
+  .opciones {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+
+  .opcion {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 1rem 1.125rem;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease;
+    user-select: none;
+  }
+
+  .opcion:hover {
+    border-color: var(--fg);
+  }
+
+  .opcion:has(input:checked) {
+    border-color: var(--border-strong);
+    background: var(--surface);
+  }
+
+  .opcion:has(input:focus-visible) {
+    outline: 2px solid var(--border-strong);
+    outline-offset: 2px;
+  }
+
+  /* Native radio hidden but still focusable/accessible */
+  .opcion input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+  }
+
+  .opcion__dot {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    border: 1.5px solid var(--muted);
+    border-radius: 50%;
+    position: relative;
+    transition: border-color 0.15s ease;
+  }
+
+  .opcion:has(input:checked) .opcion__dot {
+    border-color: var(--border-strong);
+  }
+
+  .opcion:has(input:checked) .opcion__dot::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: var(--border-strong);
+  }
+
+  .opcion__text {
+    font-size: 1rem;
+    line-height: 1.35;
+  }
+</style>

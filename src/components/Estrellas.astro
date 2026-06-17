@@ -1,0 +1,71 @@
+---
+interface Props {
+  name?: string;
+}
+
+const { name = 'recomendacion' } = Astro.props;
+const valores = [5, 4, 3, 2, 1];
+---
+
+<div class="estrellas" role="radiogroup" aria-label="Calificación de 1 a 5 estrellas">
+  {
+    valores.map((v) => (
+      <>
+        <input type="radio" id={`${name}-${v}`} name={name} value={v} required />
+        <label for={`${name}-${v}`} aria-label={`${v} ${v === 1 ? 'estrella' : 'estrellas'}`}>
+          <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true">
+            <path d="M12 2.5l2.9 5.88 6.49.94-4.7 4.58 1.11 6.46L12 17.31l-5.8 3.05 1.11-6.46-4.7-4.58 6.49-.94L12 2.5z" />
+          </svg>
+        </label>
+      </>
+    ))
+  }
+</div>
+
+<style>
+  .estrellas {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: center;
+    gap: 0.25rem;
+  }
+
+  .estrellas input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+  }
+
+  .estrellas label {
+    cursor: pointer;
+    line-height: 0;
+    padding: 0.25rem;
+    border-radius: 8px;
+  }
+
+  .estrellas svg path {
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+    transition:
+      fill 0.12s ease,
+      stroke 0.12s ease;
+  }
+
+  /* Fill the hovered/checked star and every star visually to its left
+     (row-reverse means earlier-in-DOM = right). */
+  .estrellas label:hover svg path,
+  .estrellas label:hover ~ label svg path,
+  .estrellas input:checked ~ label svg path {
+    fill: #facc15;
+    stroke: #eab308;
+  }
+
+  .estrellas input:focus-visible + label {
+    outline: 2px solid var(--border-strong);
+    outline-offset: 2px;
+  }
+</style>
