@@ -102,6 +102,7 @@ import logo from '../assets/logo.svg';
       <p class="error">Esta encuesta necesita JavaScript activado para funcionar.</p>
     </noscript>
   </main>
+  <div id="step-overlay" aria-hidden="true"></div>
 </Layout>
 
 <style>
@@ -251,6 +252,52 @@ import logo from '../assets/logo.svg';
       margin-top: 1rem;
     }
   }
+
+  #step-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--fg);
+    z-index: 999;
+    pointer-events: none;
+    transform: translateX(100%);
+    will-change: transform;
+  }
+
+  #step-overlay[data-state="in"] {
+    animation: step-slide-in 0.22s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  #step-overlay[data-state="out"] {
+    animation: step-slide-out 0.22s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  #step-overlay[data-state="in-back"] {
+    animation: step-slide-in-back 0.22s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  #step-overlay[data-state="out-back"] {
+    animation: step-slide-out-back 0.22s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  @keyframes step-slide-in {
+    from { transform: translateX(100%); }
+    to   { transform: translateX(0); }
+  }
+
+  @keyframes step-slide-out {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-100%); }
+  }
+
+  @keyframes step-slide-in-back {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(0); }
+  }
+
+  @keyframes step-slide-out-back {
+    from { transform: translateX(0); }
+    to   { transform: translateX(100%); }
+  }
 </style>
 
 <script>
@@ -261,8 +308,10 @@ import logo from '../assets/logo.svg';
   const btnNext = document.getElementById('btn-next') as HTMLButtonElement;
   const btnBack = document.getElementById('btn-back') as HTMLButtonElement;
   const errorBox = document.getElementById('error') as HTMLElement;
+  const overlay = document.getElementById('step-overlay') as HTMLElement;
   const last = steps.length - 1;
   let current = 0;
+  let animating = false;
 
   function stepValid(i: number): boolean {
     const step = steps[i];
@@ -270,7 +319,7 @@ import logo from '../assets/logo.svg';
     if (text) return text.value.trim().length > 0;
     const radios = step.querySelectorAll<HTMLInputElement>('input[type="radio"]');
     if (radios.length) return Array.from(radios).some((r) => r.checked);
-    return true; // optional textarea step
+    return true;
   }
 
   function updateNextState() {
@@ -278,9 +327,7 @@ import logo from '../assets/logo.svg';
   }
 
   function render() {
-    steps.forEach((s, i) => {
-      s.hidden = i !== current;
-    });
+    steps.forEach((s, i) => { s.hidden = i !== current; });
     const pct = Math.round((current / last) * 100);
     fill.style.width = pct + '%';
     progress.setAttribute('aria-valuenow', String(pct));
@@ -288,9 +335,31 @@ import logo from '../assets/logo.svg';
     btnNext.textContent = current === last ? 'Enviar' : 'Siguiente';
     errorBox.textContent = '';
     updateNextState();
-    const focusable = steps[current].querySelector<HTMLElement>('input, textarea');
-    if (focusable) focusable.focus({ preventScroll: true });
     window.scrollTo({ top: 0 });
+  }
+
+  function waitAnim(el: HTMLElement): Promise<void> {
+    return new Promise((r) => el.addEventListener('animationend', () => r(), { once: true }));
+  }
+
+  async function animateStep(direction: 'forward' | 'back', fn: () => void) {
+    if (animating) return;
+    animating = true;
+    btnNext.disabled = true;
+    btnBack.disabled = true;
+
+    overlay.dataset.state = direction === 'forward' ? 'in' : 'in-back';
+    await waitAnim(overlay);
+
+    fn();
+
+    overlay.dataset.state = direction === 'forward' ? 'out' : 'out-back';
+    await waitAnim(overlay);
+
+    overlay.dataset.state = '';
+    animating = false;
+    updateNextState();
+    btnBack.disabled = false;
   }
 
   async function submit() {
@@ -314,13 +383,9 @@ import logo from '../assets/logo.svg';
   }
 
   function advance() {
-    if (!stepValid(current)) {
-      updateNextState();
-      return;
-    }
+    if (!stepValid(current)) { updateNextState(); return; }
     if (current < last) {
-      current++;
-      render();
+      animateStep('forward', () => { current++; render(); });
     } else {
       submit();
     }
@@ -328,16 +393,10 @@ import logo from '../assets/logo.svg';
 
   form.addEventListener('input', updateNextState);
   form.addEventListener('change', updateNextState);
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    advance();
-  });
+  form.addEventListener('submit', (e) => { e.preventDefault(); advance(); });
   btnNext.addEventListener('click', advance);
   btnBack.addEventListener('click', () => {
-    if (current > 0) {
-      current--;
-      render();
-    }
+    if (current > 0) animateStep('back', () => { current--; render(); });
   });
 
   render();

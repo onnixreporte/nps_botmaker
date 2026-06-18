@@ -6,5 +6,5 @@ import swup from '@swup/astro';
 export default defineConfig({
   output: 'server',
   adapter: netlify(),
-  integrations: [swup()],
+  integrations: [swup({ theme: 'overlay' })],
 });
