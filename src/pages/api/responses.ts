@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
-import { db, npsResponses } from '../../lib/db';
+import { eq } from 'drizzle-orm';
+import { db, npsResponses, inviteTokens } from '../../lib/db';
 
 export const prerender = false;
 
@@ -58,9 +59,14 @@ export const POST: APIRoute = async ({ request }) => {
     comentarios = c.length ? c.slice(0, 2000) : null;
   }
 
+  const token = typeof body.token === 'string' ? body.token.trim() : null;
+  const proyecto = typeof body.proyecto === 'string' ? body.proyecto.trim() : null;
+
   try {
     await db.insert(npsResponses).values({
       nombre,
+      proyecto,
+      token,
       satisfaccion_producto: valores.satisfaccion_producto,
       cumplio_expectativas: valores.cumplio_expectativas,
       cumplimiento_plazos: valores.cumplimiento_plazos,
@@ -68,6 +74,13 @@ export const POST: APIRoute = async ({ request }) => {
       recomendacion,
       comentarios,
     });
+
+    if (token) {
+      await db
+        .update(inviteTokens)
+        .set({ usedAt: new Date() })
+        .where(eq(inviteTokens.token, token));
+    }
   } catch (e) {
     console.error('Error guardando respuesta NPS:', e);
     return json({ ok: false, error: 'Error del servidor' }, 500);

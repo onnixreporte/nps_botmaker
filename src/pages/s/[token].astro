@@ -1,0 +1,347 @@
+---
+export const prerender = false;
+
+import { eq } from 'drizzle-orm';
+import Layout from '../../layouts/Layout.astro';
+import BarraProgreso from '../../components/BarraProgreso.astro';
+import Pregunta from '../../components/Pregunta.astro';
+import OpcionUnica from '../../components/OpcionUnica.astro';
+import Estrellas from '../../components/Estrellas.astro';
+import logo from '../../assets/logo.svg';
+import { db, inviteTokens } from '../../lib/db';
+
+const { token } = Astro.params;
+
+if (!token) return Astro.redirect('/');
+
+const [invite] = await db
+  .select()
+  .from(inviteTokens)
+  .where(eq(inviteTokens.token, token))
+  .limit(1);
+
+if (!invite) return Astro.redirect('/');
+
+const { nombre, proyecto } = invite;
+---
+
+<Layout title="Encuesta de satisfacción">
+  <BarraProgreso />
+
+  <main class="wrap">
+    <header class="brand">
+      <img
+        class="brand__logo"
+        src={logo.src}
+        width={logo.width}
+        height={logo.height}
+        alt="Logo"
+      />
+    </header>
+
+    <form id="encuesta" novalidate data-nombre={nombre} data-proyecto={proyecto}>
+      <input type="hidden" name="nombre" value={nombre} />
+      <input type="hidden" name="token" value={token} />
+      <input type="hidden" name="proyecto" value={proyecto} />
+
+      <Pregunta
+        title={`Sobre el proyecto entregado: ${proyecto} — ¿Qué tan satisfecho/a está con el producto entregado?`}
+      >
+        <OpcionUnica
+          name="satisfaccion_producto"
+          options={[
+            'Muy satisfecho',
+            'Satisfecho',
+            'Ni satisfecho ni insatisfecho',
+            'Insatisfecho',
+            'Muy insatisfecho',
+          ]}
+        />
+      </Pregunta>
+
+      <Pregunta title="Calidad y cumplimiento: ¿El proyecto cumplió con sus expectativas?">
+        <OpcionUnica
+          name="cumplio_expectativas"
+          options={['Sí totalmente', 'Parcialmente', 'No cumplió']}
+        />
+      </Pregunta>
+
+      <Pregunta title="¿Cómo evaluaría el cumplimiento de los plazos de entrega?">
+        <OpcionUnica
+          name="cumplimiento_plazos"
+          options={['Muy bueno', 'Bueno', 'Regular', 'Malo']}
+        />
+      </Pregunta>
+
+      <Pregunta
+        title="Comunicación y atención: ¿Cómo calificaría la comunicación con nuestro equipo durante el proyecto?"
+      >
+        <OpcionUnica
+          name="comunicacion"
+          options={['Excelente', 'Buena', 'Regular', 'Deficiente']}
+        />
+      </Pregunta>
+
+      <Pregunta title="Recomendación: ¿Recomendaría nuestros servicios a otra empresa?">
+        <Estrellas name="recomendacion" />
+      </Pregunta>
+
+      <Pregunta title="Comentarios adicionales" subtitle="Opcional">
+        <textarea
+          class="campo-texto"
+          name="comentarios"
+          rows="5"
+          maxlength="2000"
+          placeholder="Cuéntanos cualquier cosa que quieras agregar…"></textarea>
+      </Pregunta>
+
+      <p class="error" id="error" role="alert" aria-live="polite"></p>
+
+      <div class="nav">
+        <div class="nav__row">
+          <button type="button" class="btn btn--ghost" id="btn-back" hidden>Atrás</button>
+          <button type="button" class="btn btn--primary" id="btn-next">Siguiente</button>
+        </div>
+      </div>
+    </form>
+
+    <noscript>
+      <p class="error">Esta encuesta necesita JavaScript activado para funcionar.</p>
+    </noscript>
+  </main>
+</Layout>
+
+<style>
+  .wrap {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: clamp(1.5rem, 4vw, 3rem) 1.25rem 7rem;
+    min-height: calc(100dvh - 4px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .brand {
+    display: flex;
+    justify-content: center;
+    padding: 1rem 0 2.5rem;
+  }
+
+  .brand__logo {
+    height: 32px;
+    width: auto;
+    display: block;
+  }
+
+  #encuesta {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    flex: 1;
+  }
+
+  .campo-texto {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    font-family: inherit;
+    font-size: 1rem;
+    color: var(--fg);
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    transition: border-color 0.15s ease;
+  }
+
+  .campo-texto::placeholder {
+    color: var(--muted);
+  }
+
+  .campo-texto:hover {
+    border-color: var(--fg);
+  }
+
+  .campo-texto:focus {
+    outline: none;
+    border-color: var(--border-strong);
+  }
+
+  textarea.campo-texto {
+    resize: vertical;
+    min-height: 7rem;
+  }
+
+  .error {
+    color: #b00020;
+    font-size: 0.9375rem;
+    min-height: 1.25rem;
+  }
+
+  .nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, var(--bg) 78%, transparent);
+  }
+
+  .nav__row {
+    width: 100%;
+    max-width: var(--maxw);
+    margin: 0 auto;
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 0.9375rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: var(--radius);
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    transition:
+      filter 0.15s ease,
+      transform 0.1s ease,
+      box-shadow 0.15s ease,
+      background 0.15s ease,
+      color 0.15s ease,
+      opacity 0.15s ease;
+  }
+
+  .btn--primary {
+    background: linear-gradient(to top, #000000, #2e2e2e);
+    color: var(--bg);
+    border: 1px solid #000000;
+    border-top-color: #404040;
+    box-shadow:
+      0 2px 0 #000000,
+      0 4px 8px rgba(0, 0, 0, 0.25);
+  }
+
+  .btn--primary:hover:not(:disabled) {
+    filter: brightness(1.12);
+  }
+
+  .btn--primary:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow:
+      0 0 0 #000000,
+      0 2px 4px rgba(0, 0, 0, 0.25);
+  }
+
+  .btn--primary:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .btn--ghost {
+    background: transparent;
+    color: var(--fg);
+    border-color: var(--border);
+    flex: 0 0 auto;
+    max-width: none;
+    min-width: 6rem;
+  }
+
+  .btn--ghost:hover {
+    border-color: var(--fg);
+  }
+
+  @media (min-width: 640px) {
+    .nav {
+      position: static;
+      padding: 0;
+      background: none;
+      margin-top: 1rem;
+    }
+  }
+</style>
+
+<script>
+  const form = document.getElementById('encuesta') as HTMLFormElement;
+  const steps = Array.from(form.querySelectorAll<HTMLElement>('[data-step]'));
+  const fill = document.getElementById('progress-fill') as HTMLElement;
+  const progress = document.getElementById('progress') as HTMLElement;
+  const btnNext = document.getElementById('btn-next') as HTMLButtonElement;
+  const btnBack = document.getElementById('btn-back') as HTMLButtonElement;
+  const errorBox = document.getElementById('error') as HTMLElement;
+  const last = steps.length - 1;
+  let current = 0;
+
+  function stepValid(i: number): boolean {
+    const step = steps[i];
+    const radios = step.querySelectorAll<HTMLInputElement>('input[type="radio"]');
+    if (radios.length) return Array.from(radios).some((r) => r.checked);
+    return true; // optional textarea step
+  }
+
+  function updateNextState() {
+    btnNext.disabled = !stepValid(current);
+  }
+
+  function render() {
+    steps.forEach((s, i) => {
+      s.hidden = i !== current;
+    });
+    const pct = Math.round((current / last) * 100);
+    fill.style.width = pct + '%';
+    progress.setAttribute('aria-valuenow', String(pct));
+    btnBack.hidden = current === 0;
+    btnNext.textContent = current === last ? 'Enviar' : 'Siguiente';
+    errorBox.textContent = '';
+    updateNextState();
+    window.scrollTo({ top: 0 });
+  }
+
+  async function submit() {
+    btnNext.disabled = true;
+    btnNext.textContent = 'Enviando…';
+    const data = Object.fromEntries(new FormData(form).entries());
+    try {
+      const res = await fetch('/api/responses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error('request failed');
+      window.location.href = '/gracias';
+    } catch {
+      errorBox.textContent =
+        'No se pudo enviar. Revisa tu conexión e inténtalo de nuevo.';
+      btnNext.disabled = false;
+      btnNext.textContent = 'Enviar';
+    }
+  }
+
+  function advance() {
+    if (!stepValid(current)) {
+      updateNextState();
+      return;
+    }
+    if (current < last) {
+      current++;
+      render();
+    } else {
+      submit();
+    }
+  }
+
+  form.addEventListener('input', updateNextState);
+  form.addEventListener('change', updateNextState);
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    advance();
+  });
+  btnNext.addEventListener('click', advance);
+  btnBack.addEventListener('click', () => {
+    if (current > 0) {
+      current--;
+      render();
+    }
+  });
+
+  render();
+</script>
